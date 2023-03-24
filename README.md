@@ -1,3 +1,5 @@
+> Note: the aws cdk code in this fork is not tested because I'm not using aws cdk, but I've made some changes based on my guesses
+
 # Creating AWS Lambda environment variable from AWS Secrets Manager
 
 [AWS Lambda](https://aws.amazon.com/lambda/) layers and extensions are used by third-party software providers for monitoring Lambda functions. A monitoring solution needs environmental variables to provide configuration information to send metric information to an endpoint.
