@@ -9,10 +9,10 @@
 # best choice.
 #
 
-SECRET_ARN=$1
+SECRET_ARNS=$1
 
 # Make sure that a secret arn was supplied as an argument
-if [[ -z ${SECRET_ARN+z} ]]; then
+if [[ -z ${SECRET_ARNS+z} ]]; then
     echo "Build failed as no SECRET ARN was supplied as the only argument to this script"
 	exit 1
 fi
@@ -47,4 +47,4 @@ cd ../..
 # Now run the CDK to deploy everything
 cd cdk
 npm install
-npx aws-cdk@2.x deploy --parameters secretArn="${SECRET_ARN}"
+npx aws-cdk@2.x deploy --parameters secretArn="${SECRET_ARNS}"

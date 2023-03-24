@@ -13,6 +13,9 @@ out/
 .cdk.staging
 cdk.out
 
+go-retrieve-secret
+get-secrets-layer.*
+
 # Ignore for VS Code and Mac
 .vscode
 .DS_Store

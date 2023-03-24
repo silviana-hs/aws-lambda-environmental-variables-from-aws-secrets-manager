@@ -9,15 +9,17 @@
 import * as cdk from 'aws-cdk-lib';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import { Construct } from 'constructs';
 
 export class CdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const secretArn = new cdk.CfnParameter(this, 'secretArn', {
-      type: 'String',
-      description: 'The ARN for the secret to read data from.'});
+    const secretArns = new cdk.CfnParameter(this, "secretArn", {
+      type: "CommaDelimitedList",
+      description: "The list of ARNs for the secret to read data from.",
+    });
     
     const apiTimeout = new cdk.CfnParameter(this, 'apiTimeout', {
       type: 'Number',
@@ -26,12 +28,17 @@ export class CdkStack extends cdk.Stack {
 
     const secretRegion = cdk.Stack.of(this).region;
 
+    // Get secret ids
+    const secretIds = secretArns.valueAsList.map(
+      (arn: string) => secretsmanager.Secret.fromSecretCompleteArn(this, arn.split(":").slice(-1)[0], arn).secretName
+    );
+
     // Create a new policy document
     const lambdaPolicy = new iam.PolicyDocument();
     lambdaPolicy.addStatements(new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
       actions: ['secretsmanager:GetSecretValue'],
-      resources: [secretArn.valueAsString]
+      resources: secretArns.valueAsList
     }));
 
     // Create the role here to use the secret
@@ -55,18 +62,18 @@ export class CdkStack extends cdk.Stack {
     });
 
     // Create the lambda and assign the role and layer
-    const func = new lambda.Function(this, 'example-get-secrets-lambda', {
+    const func = new lambda.Function(this, "example-get-secrets-lambda", {
       runtime: lambda.Runtime.PYTHON_3_9,
-      handler: 'lambda_function.lambda_handler',
-      code: lambda.Code.fromAsset('../out/example-get-secrets-lambda.zip'),
+      handler: "lambda_function.lambda_handler",
+      code: lambda.Code.fromAsset("../out/example-get-secrets-lambda.zip"),
       layers: [getSecretsLayer, secondExampleLayer],
       role: lambdaRole,
       environment: {
-        'AWS_LAMBDA_EXEC_WRAPPER': '/opt/get-secrets-layer',
-        'SECRET_REGION': secretRegion,
-        'SECRET_ARN': secretArn.valueAsString,
-        'API_TIMEOUT': apiTimeout.valueAsString
-      }
+        AWS_LAMBDA_EXEC_WRAPPER: "/opt/get-secrets-layer",
+        SECRET_REGION: secretRegion,
+        SECRET_IDS: secretIds.join(","),
+        API_TIMEOUT: apiTimeout.valueAsString,
+      },
     });
   }
 }
